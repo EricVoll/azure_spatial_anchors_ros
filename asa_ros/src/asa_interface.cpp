@@ -463,6 +463,12 @@ void AzureSpatialAnchorsInterface::sessionUpdateHandler(
     LOG(INFO) << "                UserFeedback : "
               << to_string(args->Status()->UserFeedback()) << "\n";
   }
+  else{
+    if(!ready_for_create_progress_above_1 && args->Status()->RecommendedForCreateProgress()>1){
+      ready_for_create_progress_above_1 = true;
+      LOG(INFO) << "Session is ready to create and query anchors";
+    }
+  }
 }
 
 std::string AzureSpatialAnchorsInterface::trimWhitespace(const std::string& s) {

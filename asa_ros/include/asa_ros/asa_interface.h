@@ -161,6 +161,9 @@ class AzureSpatialAnchorsInterface {
   // Keep track of how many frames were added.
   size_t frame_count_;
 
+  // if true, then the session can create anchors
+  bool ready_for_create_progress_above_1 = false;
+
   // Mutex for locking new frames when creating an anchor.
   std::mutex frame_mutex_;
   std::mutex session_update_mutex_;
