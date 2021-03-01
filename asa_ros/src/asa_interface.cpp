@@ -467,6 +467,10 @@ void AzureSpatialAnchorsInterface::sessionUpdateHandler(
     if(!ready_for_create_progress_above_1 && args->Status()->RecommendedForCreateProgress()>1){
       ready_for_create_progress_above_1 = true;
       LOG(INFO) << "Session is ready to create and query anchors";
+
+      if(ready_for_create_callback != nullptr){
+        ready_for_create_callback(args->Status()->RecommendedForCreateProgress());
+      }
     }
   }
 }
@@ -498,6 +502,11 @@ bool AzureSpatialAnchorsInterface::isValidUuid(const std::string& id) {
       "[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-"
       "9a-fA-F]{12}");
   return std::regex_match(id, uuid_regex);
+}
+
+void AzureSpatialAnchorsInterface::SetReadyForCreateCallback(const std::function<void(float)>& callback)
+{
+  ready_for_create_callback = callback;
 }
 
 }  // namespace asa_ros

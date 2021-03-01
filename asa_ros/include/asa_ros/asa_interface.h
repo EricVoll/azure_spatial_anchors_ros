@@ -107,6 +107,8 @@ class AzureSpatialAnchorsInterface {
   bool queryAnchorsWithCallback(const std::vector<std::string>& anchor_ids,
                                 const FoundAnchorCallbackFunction& callback);
 
+  void SetReadyForCreateCallback(const std::function<void(float)>& callback);
+
   // === Helpers ===
   // Validate that a string is a valid UUID for Anchor UUID, account IDs, etc.
   static bool isValidUuid(const std::string& id);
@@ -115,6 +117,7 @@ class AzureSpatialAnchorsInterface {
                                                    char delimiter);
 
  private:
+
   // Callback for session updates. Currently optionally prints to LOG(INFO).
   void sessionUpdateHandler(
       void*,
@@ -163,6 +166,8 @@ class AzureSpatialAnchorsInterface {
 
   // if true, then the session can create anchors
   bool ready_for_create_progress_above_1 = false;
+  
+  std::function<void(float)> ready_for_create_callback = nullptr;
 
   // Mutex for locking new frames when creating an anchor.
   std::mutex frame_mutex_;

@@ -19,7 +19,7 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <std_srvs/Empty.h>
-
+#include <std_msgs/Empty.h>
 #include <Eigen/Geometry>
 
 #include "asa_ros/asa_interface.h"
@@ -68,6 +68,8 @@ class AsaRosNode {
   // Timer callbacks.
   void createAnchorTimerCallback(const ros::TimerEvent& e);
 
+  void AsaStatusChanged(float status);
+
   // Nodehandles, publishers, subscribers.
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -85,6 +87,7 @@ class AsaRosNode {
   // Pubs & subs
   ros::Publisher found_anchor_pub_;
   ros::Publisher created_anchor_pub_;
+  ros::Publisher ready_to_operate_pub_;
   ros::Subscriber transform_sub_;
 
   // Services.
@@ -117,6 +120,10 @@ class AsaRosNode {
 
   // The queue size of the subscribers used for the image and camera_info topic
   int queue_size;
+
+  // If true, the node will publish an empty message to notify subscribers that the node
+  // is not ready to query and create anchors
+  bool should_publish_ready_msgs;
 
   // Cache of which anchors are currently being queried. This will be only used
   // when reset() (but not resetCompletely() is called, to restart any

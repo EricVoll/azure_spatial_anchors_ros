@@ -29,6 +29,7 @@ void AsaRosNode::initFromRosParams() {
 
   nh_private_.param("subscriber_queue_size", queue_size, 1);
   nh_private_.param("use_approx_sync_policy", use_approx_sync_policy, false);
+  nh_private_.param("should_publish_ready_msgs", should_publish_ready_msgs, true);
 
   if(queue_size > 1 || use_approx_sync_policy) {
     ROS_INFO_STREAM("Starting image and info subscribers with approximate time sync, where que-size is " << queue_size);
@@ -39,8 +40,10 @@ void AsaRosNode::initFromRosParams() {
   info_sub_.subscribe(nh_, "camera_info", queue_size);
   
   if(use_approx_sync_policy) {
-    image_info_approx_sync_.reset(new message_filters::Synchronizer<CameraSyncPolicy>(CameraSyncPolicy(queue_size), image_sub_, info_sub_));
-    image_info_approx_sync_->registerCallback(boost::bind(&AsaRosNode::imageAndInfoCallback, this, _1, _2));
+    image_info_approx_sync_.reset(new message_filters::Synchronizer<CameraSyncPolicy>(
+      CameraSyncPolicy(queue_size), image_sub_, info_sub_));
+    image_info_approx_sync_->registerCallback(boost::bind(&AsaRosNode::imageAndInfoCallback, 
+                                                          this, _1, _2));
   } else {
     image_info_sync_.reset(
         new message_filters::TimeSynchronizer<sensor_msgs::Image,
@@ -58,6 +61,8 @@ void AsaRosNode::initFromRosParams() {
       nh_private_.advertise<asa_ros_msgs::FoundAnchor>("found_anchor", 1, true);
   created_anchor_pub_ = nh_private_.advertise<asa_ros_msgs::CreatedAnchor>(
       "created_anchor", 1, true);
+  ready_to_operate_pub_ = nh_private_.advertise<std_msgs::Empty>(
+    "operation_ready", 1, true);
 
   // Services.
   create_anchor_srv_ = nh_private_.advertiseService(
@@ -107,6 +112,14 @@ void AsaRosNode::initFromRosParams() {
         anchor_id, std::bind(&AsaRosNode::anchorFoundCallback, this,
                              std::placeholders::_1, std::placeholders::_2));
   }
+
+  interface_->SetReadyForCreateCallback(std::bind(&AsaRosNode::AsaStatusChanged, this,
+                            std::placeholders::_1));
+}
+
+void AsaRosNode::AsaStatusChanged(float status){
+  std_msgs::Empty myMsg;
+  ready_to_operate_pub_.publish(myMsg);
 }
 
 void AsaRosNode::imageAndInfoCallback(
@@ -183,6 +196,7 @@ bool AsaRosNode::createAnchorCallback(asa_ros_msgs::CreateAnchorRequest& req,
   // If there is not enough "spatial data" (different perspectives on the
   // scene), then anchor creation will fail immediately. This can be fixed by
   // getting more viewpoints.
+
   return true;
 }
 
