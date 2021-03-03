@@ -32,7 +32,7 @@ void AsaRosNode::initFromRosParams() {
   nh_private_.param("should_publish_ready_msgs", should_publish_ready_msgs, true);
 
   if(queue_size > 1 || use_approx_sync_policy) {
-    ROS_INFO_STREAM("Starting image and info subscribers with approximate time sync, where que-size is " << queue_size);
+    ROS_INFO_STREAM("-Starting image and info subscribers with approximate time sync, where que-size is " << queue_size);
   }
 
   // Subscribe to the camera images.
@@ -125,7 +125,7 @@ void AsaRosNode::AsaStatusChanged(float status){
 void AsaRosNode::imageAndInfoCallback(
     const sensor_msgs::Image::ConstPtr& image,
     const sensor_msgs::CameraInfo::ConstPtr& camera_info) {
-  
+
   if (camera_frame_id_.empty()) {
     camera_frame_id_ = image->header.frame_id;
     ROS_INFO_STREAM("Set camera frame ID to " << camera_frame_id_);

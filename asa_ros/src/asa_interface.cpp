@@ -409,6 +409,10 @@ bool AzureSpatialAnchorsInterface::queryAnchorsWithCallback(
   // Set up a lambda to update a local variable when anchors are found.
   anchor_located_token_.reset(
       new Microsoft::Azure::SpatialAnchors::event_token);
+
+  try{
+
+
   *anchor_located_token_ = session_->AnchorLocated(
       [this, callback](void*,
                        const std::shared_ptr<asa::AnchorLocatedEventArgs>&
@@ -424,6 +428,11 @@ bool AzureSpatialAnchorsInterface::queryAnchorsWithCallback(
         callback(anchor_located_event->Anchor()->Identifier(),
                  anchor_in_world_frame);
       });
+  }
+  catch(...)
+  {
+    LOG(ERROR) << "Something failed!";
+  }
 
   try {
     // Create an anchor watcher for these specific criteria.
