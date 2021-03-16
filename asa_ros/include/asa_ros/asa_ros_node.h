@@ -42,6 +42,8 @@ class AsaRosNode {
   // Subscriber callbacks.
   void imageAndInfoCallback(const sensor_msgs::ImageConstPtr& image,
                             const sensor_msgs::CameraInfoConstPtr& camera_info);
+  void imageCallback(const sensor_msgs::ImageConstPtr& image);
+  void infoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
   void transformCallback(const geometry_msgs::TransformStamped& msg);
 
   // ASA interface callbacks for publishing.
@@ -89,6 +91,8 @@ class AsaRosNode {
   ros::Publisher created_anchor_pub_;
   ros::Publisher ready_to_operate_pub_;
   ros::Subscriber transform_sub_;
+  ros::Subscriber nosync_image_sub_;
+  ros::Subscriber nosync_camera_info_sub_;
 
   // Services.
   ros::ServiceServer create_anchor_srv_;
@@ -124,6 +128,12 @@ class AsaRosNode {
   // If true, the node will publish an empty message to notify subscribers that the node
   // is not ready to query and create anchors
   bool should_publish_ready_msgs;
+
+  // If true, then the first camera_info topic will be used for all images
+  // This avoids having to synchronize images and infos
+  bool should_not_synch_msgs;
+
+  sensor_msgs::CameraInfo::ConstPtr first_info_msg;
 
   // Cache of which anchors are currently being queried. This will be only used
   // when reset() (but not resetCompletely() is called, to restart any

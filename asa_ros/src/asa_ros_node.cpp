@@ -30,6 +30,7 @@ void AsaRosNode::initFromRosParams() {
   nh_private_.param("subscriber_queue_size", queue_size, 1);
   nh_private_.param("use_approx_sync_policy", use_approx_sync_policy, false);
   nh_private_.param("should_publish_ready_msgs", should_publish_ready_msgs, true);
+  nh_private_.param("should_not_synch_msgs", should_not_synch_msgs, false);
 
   if(queue_size > 1 || use_approx_sync_policy) {
     ROS_INFO_STREAM("-Starting image and info subscribers with approximate time sync, where que-size is " << queue_size);
@@ -39,22 +40,29 @@ void AsaRosNode::initFromRosParams() {
   image_sub_.subscribe(nh_, "image", queue_size);
   info_sub_.subscribe(nh_, "camera_info", queue_size);
   
-  if(use_approx_sync_policy) {
-    image_info_approx_sync_.reset(new message_filters::Synchronizer<CameraSyncPolicy>(
-      CameraSyncPolicy(queue_size), image_sub_, info_sub_));
-    image_info_approx_sync_->registerCallback(boost::bind(&AsaRosNode::imageAndInfoCallback, 
-                                                          this, _1, _2));
-  } else {
-    image_info_sync_.reset(
-        new message_filters::TimeSynchronizer<sensor_msgs::Image,
-                                              sensor_msgs::CameraInfo>(image_sub_, info_sub_, 10));
-    image_info_sync_->registerCallback(
-        boost::bind(&AsaRosNode::imageAndInfoCallback, this, _1, _2));
+  if (should_not_synch_msgs){
+    nosync_camera_info_sub_ = nh_.subscribe("camera_info", 1, &AsaRosNode::infoCallback, this);
+    nosync_image_sub_ = nh_.subscribe("image", 1, &AsaRosNode::imageCallback, this);
+  }
+  else{
+    if(use_approx_sync_policy) {
+      image_info_approx_sync_.reset(new message_filters::Synchronizer<CameraSyncPolicy>(
+        CameraSyncPolicy(queue_size), image_sub_, info_sub_));
+      image_info_approx_sync_->registerCallback(boost::bind(&AsaRosNode::imageAndInfoCallback, 
+                                                            this, _1, _2));
+    } else {
+      image_info_sync_.reset(
+          new message_filters::TimeSynchronizer<sensor_msgs::Image,
+                                                sensor_msgs::CameraInfo>(image_sub_, info_sub_, 10));
+      image_info_sync_->registerCallback(
+          boost::bind(&AsaRosNode::imageAndInfoCallback, this, _1, _2));
+    }
   }
 
   // Subscribe to transform topics, if any.
   transform_sub_ =
       nh_.subscribe("transform", 1, &AsaRosNode::transformCallback, this);
+
 
   // Publishers.
   found_anchor_pub_ =
@@ -121,6 +129,20 @@ void AsaRosNode::AsaStatusChanged(float status){
   std_msgs::Empty myMsg;
   ready_to_operate_pub_.publish(myMsg);
 }
+
+void AsaRosNode::imageCallback(
+    const sensor_msgs::Image::ConstPtr& image){
+      if(first_info_msg != NULL){
+        imageAndInfoCallback(image, first_info_msg);
+      }
+    }
+
+void AsaRosNode::infoCallback(
+    const sensor_msgs::CameraInfo::ConstPtr& camera_info){
+      //Store the info msg and shut down the subscriber. We only need one.
+      first_info_msg = camera_info;
+      nosync_camera_info_sub_.shutdown();
+    }
 
 void AsaRosNode::imageAndInfoCallback(
     const sensor_msgs::Image::ConstPtr& image,
