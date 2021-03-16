@@ -141,7 +141,6 @@ void AsaRosNode::infoCallback(
     const sensor_msgs::CameraInfo::ConstPtr& camera_info){
       //Store the info msg and shut down the subscriber. We only need one.
       first_info_msg = camera_info;
-      nosync_camera_info_sub_.shutdown();
     }
 
 void AsaRosNode::imageAndInfoCallback(
@@ -153,9 +152,11 @@ void AsaRosNode::imageAndInfoCallback(
     ROS_INFO_STREAM("Set camera frame ID to " << camera_frame_id_);
   }
   // Look up its pose.
+  // ROS_INFO_STREAM("Camera info time looked up " << image->header.stamp << " world: " << world_frame_id_ << " cam frame: " << camera_frame_id_);
   if (tf_buffer_.canTransform(world_frame_id_, camera_frame_id_,
                               image->header.stamp,
                               ros::Duration(tf_lookup_timeout_))) {
+                                
     geometry_msgs::TransformStamped transform = tf_buffer_.lookupTransform(
         world_frame_id_, camera_frame_id_, image->header.stamp);
 
